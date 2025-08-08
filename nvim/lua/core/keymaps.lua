@@ -4,3 +4,4 @@ local opts = { noremap = true, silent = true }
 map("n", "<C-n>", ":NvimTreeToggle<CR>", opts)
 map("n", "<leader>e", ":NvimTreeFocus<CR>", opts)
 map("n", "<leader>f", ":Telescope find_files<CR>", opts)
+map('n', '<leader>ca', 'Telescope lsp_code_actions<CR>', opts)

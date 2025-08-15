@@ -138,3 +138,6 @@ tmuxdev() {
          attach -t $SESSION
   fi
 }
+
+eval "$(starship init bash)"
+eval "$(zoxide init bash)"

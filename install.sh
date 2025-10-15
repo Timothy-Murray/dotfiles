@@ -31,6 +31,7 @@ echo "Setting up dotfiles..."
 link_config "$DOTFILES_DIR/nvim" "$CONFIG_DIR/nvim"
 link_config "$DOTFILES_DIR/bashrc" "$HOME/.bashrc"
 link_config "$DOTFILES_DIR/tmux.conf" "$HOME/.tmux.conf"
+link_config "$DOTFILES_DIR/bash_aliases" "$HOME/.bash_aliases"
 
 echo "Dotfiles setup complete!"
 echo "You may need to restart your terminal or run 'source ~/.bashrc' for changes to take effect."

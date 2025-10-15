@@ -8,4 +8,5 @@ require("plugins.cmp")
 require("plugins.treesitter")
 require("plugins.lualine")
 require("plugins.catppuccin")
+require("plugins.toggleterm")
 require("nvim-tree").setup {}

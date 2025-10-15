@@ -96,6 +96,13 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
+# Added by Timmy
+# Import plugins that are referenced in aliases
+
+eval "$(starship init bash)"
+eval "$(zoxide init bash)"
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Alias definitions.
 # You may want to put all your additions into a separate file like
 # ~/.bash_aliases, instead of adding them here directly.
@@ -139,5 +146,4 @@ tmuxdev() {
   fi
 }
 
-eval "$(starship init bash)"
-eval "$(zoxide init bash)"
+

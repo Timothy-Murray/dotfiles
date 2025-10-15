@@ -102,6 +102,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 eval "$(starship init bash)"
 eval "$(zoxide init bash)"
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/dotfiles:$PATH"
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like

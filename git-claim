@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# git-claim — per-repo git identity manager
+# Author: Tim Murray
+# Version: 1.0
+# Location: ~/dotfiles/git-claim
+
+IDENTITIES_FILE="$HOME/dotfiles/git-identities"
+
+# --- Utility functions ---
+error() { echo "❌ $1" >&2; exit 1; }
+info() { echo "💡 $1"; }
+success() { echo "✅ $1"; }
+
+# --- Ensure git is available ---
+command -v git >/dev/null 2>&1 || error "git not found in PATH."
+
+# --- Helper functions ---
+list_profiles() {
+  grep '^\[' "$IDENTITIES_FILE" 2>/dev/null | sed 's/[][]//g'
+}
+
+get_profile_field() {
+  local profile="$1"
+  local field="$2"
+  awk -F' = ' "/\\[$profile\\]/{f=1;next}/^\\[/{f=0}f&&/$field/{print \$2}" "$IDENTITIES_FILE"
+}
+
+show_identity() {
+  local name email
+  name=$(git config user.name 2>/dev/null)
+  email=$(git config user.email 2>/dev/null)
+  if [[ -z "$name" && -z "$email" ]]; then
+    info "No local identity set for this repo."
+  else
+    echo "📂 Current repo identity:"
+    echo "   Name:  $name"
+    echo "   Email: $email"
+  fi
+}
+
+set_identity() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || error "Not a git repository."
+  local profile="$1"
+  local name email
+
+  name=$(get_profile_field "$profile" name)
+  email=$(get_profile_field "$profile" email)
+
+  [[ -z "$name" || -z "$email" ]] && error "Profile '$profile' not found or incomplete in $IDENTITIES_FILE."
+
+  git config user.name "$name"
+  git config user.email "$email"
+
+  success "Set git identity to '$profile':"
+  echo "   Name:  $name"
+  echo "   Email: $email"
+}
+
+init_identities() {
+  if [[ -f "$IDENTITIES_FILE" ]]; then
+    read -rp "Identities file already exists. Overwrite? (y/N): " ans
+    [[ "$ans" =~ ^[Yy]$ ]] || { echo "Aborted."; return; }
+  fi
+
+  mkdir -p "$(dirname "$IDENTITIES_FILE")"
+  cat >"$IDENTITIES_FILE" <<EOF
+# Git Claim Identities
+# Format:
+# [profile]
+# name = Your Name
+# email = you@example.com
+EOF
+
+  echo "✅ Created $IDENTITIES_FILE"
+  echo "💡 Tip: add it to .gitignore if your dotfiles are versioned."
+
+  read -rp "Would you like to add your first identity now? (y/N): " ans
+  [[ "$ans" =~ ^[Yy]$ ]] && add_identity
+}
+
+add_identity() {
+  local profile="$1" name email
+  if [[ -z "$profile" ]]; then
+    read -rp "Enter profile name: " profile
+  fi
+
+  [[ -z "$profile" ]] && error "Profile name cannot be empty."
+  if grep -q "^\[$profile\]" "$IDENTITIES_FILE" 2>/dev/null; then
+    error "Profile '$profile' already exists."
+  fi
+
+  read -rp "Full name: " name
+  read -rp "Email: " email
+  [[ -z "$name" || -z "$email" ]] && error "Name and email are required."
+
+  {
+    echo
+    echo "[$profile]"
+    echo "name = $name"
+    echo "email = $email"
+  } >>"$IDENTITIES_FILE"
+
+  success "Added profile '$profile' to $IDENTITIES_FILE"
+}
+
+edit_identities() {
+  ${EDITOR:-nano} "$IDENTITIES_FILE"
+}
+
+show_help() {
+  cat <<EOF
+git-claim — per-repo git identity manager
+
+Usage:
+  git-claim <profile>     Set repo identity to given profile
+  git-claim               (fzf picker if installed)
+  git-claim --list        List available profiles
+  git-claim --show        Show current repo identity
+  git-claim init          Create an empty identities file
+  git-claim add [profile] Add a new identity
+  git-claim edit          Open identities file in \$EDITOR
+  git-claim --help        Show this help
+
+Identities are stored in: $IDENTITIES_FILE
+EOF
+}
+
+# --- Main dispatch ---
+case "$1" in
+  --help|-h)
+    show_help
+    ;;
+  --list|-l)
+    echo "Available profiles:"
+    list_profiles
+    ;;
+  --show|-s)
+    show_identity
+    ;;
+  init)
+    init_identities
+    ;;
+  add)
+    shift
+    add_identity "$@"
+    ;;
+  edit)
+    edit_identities
+    ;;
+  "")
+    if command -v fzf >/dev/null 2>&1; then
+      profiles=$(list_profiles)
+      if [[ -z "$profiles" ]]; then
+        error "No profiles defined. Run 'git-claim add' first."
+      fi
+      profile=$(echo "$profiles" | fzf --prompt="Select git profile: ")
+      [[ -n "$profile" ]] && set_identity "$profile"
+    else
+      show_help
+    fi
+    ;;
+  *)
+    set_identity "$1"
+    ;;
+esac
